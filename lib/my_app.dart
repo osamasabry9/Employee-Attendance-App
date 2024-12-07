@@ -1,3 +1,4 @@
+import 'package:employee_attendance/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class MyApp extends StatelessWidget {
@@ -5,10 +6,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'Attendance',
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
+      theme: AppTheme.darkTheme,
+      home: const Scaffold(
         body: Center(
           child: Text('Hello World'),
         ),
