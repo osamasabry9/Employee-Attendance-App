@@ -4,6 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/attendance/presentation/cubit/attendance_cubit.dart';
 import '../../features/attendance/presentation/screens/activity_history_screen.dart';
+import '../../features/leave/presentation/cubit/leave_cubit.dart';
+import '../../features/leave/presentation/screens/leave_detail_screen.dart';
+import '../../features/leave/presentation/screens/leave_form_screen.dart';
 import '../di/injection_container.dart';
 
 class AppRouter {
@@ -23,6 +26,7 @@ class AppRouter {
         name: 'home',
         builder: (context, state) => MultiBlocProvider(
           providers: [
+            BlocProvider(create: (context) => getIt<LeaveCubit>()),
             BlocProvider(create: (context) => getIt<AttendanceCubit>()),
           ],
           child: const HomeScreen(),
@@ -30,17 +34,17 @@ class AppRouter {
         routes: [
           GoRoute(
             path: 'leave/new',
-            builder: (context, state) => const Scaffold(
-              body: Center(
-                child: Text('Leave Screen'),
-              ),
+            builder: (context, state) => BlocProvider.value(
+              value: context.read<LeaveCubit>(),
+              child: const LeaveFormScreen(),
             ),
           ),
           GoRoute(
             path: 'leave/:id',
-            builder: (context, state) => const Scaffold(
-              body: Center(
-                child: Text('Leave ID Screen'),
+            builder: (context, state) => BlocProvider(
+              create: (context) => getIt<LeaveCubit>(),
+              child: LeaveDetailScreen(
+                leaveId: state.pathParameters['id']!,
               ),
             ),
           ),
