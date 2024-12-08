@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../features/attendance/presentation/cubit/attendance_cubit.dart';
+import '../../features/attendance/presentation/screens/activity_history_screen.dart';
 
 class AppRoutes {
   static const String activityHistory = '/activity-history';
@@ -8,7 +10,10 @@ class AppRoutes {
     switch (settings.name) {
       case activityHistory:
         return MaterialPageRoute(
-          builder: (context) => const Scaffold(),
+          builder: (context) => BlocProvider.value(
+            value: BlocProvider.of<AttendanceCubit>(context),
+            child: const ActivityHistoryScreen(),
+          ),
         );
       default:
         return MaterialPageRoute(
