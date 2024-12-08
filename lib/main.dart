@@ -1,6 +1,19 @@
-import 'package:employee_attendance/my_app.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'core/di/injection_container.dart';
+import 'my_app.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Set preferred orientations
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Initialize dependencies
+  await initializeDependencies();
+
   runApp(const MyApp());
 }
