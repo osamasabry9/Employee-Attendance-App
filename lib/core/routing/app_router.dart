@@ -1,5 +1,10 @@
+import 'package:employee_attendance/features/attendance/presentation/screens/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/attendance/presentation/cubit/attendance_cubit.dart';
+import '../../features/attendance/presentation/screens/activity_history_screen.dart';
+import '../di/injection_container.dart';
 
 class AppRouter {
   static const String home = '/';
@@ -15,12 +20,39 @@ class AppRouter {
     routes: [
       GoRoute(
         path: home,
-        builder: (context, state) => const Scaffold(
-          body: Center(
-            child: Text('Home'),
-          ),
+        name: 'home',
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (context) => getIt<AttendanceCubit>()),
+          ],
+          child: const HomeScreen(),
         ),
-      )
+        routes: [
+          GoRoute(
+            path: 'leave/new',
+            builder: (context, state) => const Scaffold(
+              body: Center(
+                child: Text('Leave Screen'),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: 'leave/:id',
+            builder: (context, state) => const Scaffold(
+              body: Center(
+                child: Text('Leave ID Screen'),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: 'activity-history',
+            builder: (context, state) => BlocProvider(
+              create: (_) => getIt<AttendanceCubit>(),
+              child: const ActivityHistoryScreen(),
+            ),
+          ),
+        ],
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(
