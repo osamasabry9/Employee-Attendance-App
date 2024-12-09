@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:iconsax/iconsax.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_fonts.dart';
@@ -70,7 +71,10 @@ class _LeaveListScreenState extends State<LeaveListScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: backgroundColor,
+        backgroundColor: backgroundColor ?? AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(16.w),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -160,9 +164,9 @@ class _LeaveListScreenState extends State<LeaveListScreen>
   void _updateLeaveStatus(String leaveId, LeaveStatus status) {
     try {
       context.read<LeaveCubit>().updateLeaveStatus(
-            leaveId: leaveId,
-            status: status,
-          );
+        leaveId: leaveId,
+        status: status,
+      );
     } catch (e) {
       _showSnackBar(
         'Failed to update leave status: $e',
