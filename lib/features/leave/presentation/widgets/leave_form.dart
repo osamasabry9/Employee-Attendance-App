@@ -19,8 +19,8 @@ class _LeaveFormState extends State<LeaveForm> {
   final _titleController = TextEditingController();
   final _reasonController = TextEditingController();
   final _contactController = TextEditingController();
-  DateTime _startDate = DateTime.now();
-  DateTime _endDate = DateTime.now();
+  DateTime _startDate = DateTime.now().add(const Duration(days: 1));
+  DateTime _endDate = DateTime.now().add(const Duration(days: 2));
   String _selectedLeaveType = 'Medical Leave';
 
   final _leaveTypes = [
@@ -122,7 +122,9 @@ class _LeaveFormState extends State<LeaveForm> {
       final DateTime? picked = await showDatePicker(
         context: context,
         initialDate: isStartDate ? _startDate : _endDate,
-        firstDate: isStartDate ? DateTime.now() : _startDate,
+        firstDate: isStartDate
+            ? DateTime.now().add(const Duration(days: 1))
+            : _startDate.add(const Duration(days: 1)),
         lastDate: DateTime.now().add(const Duration(days: 365)),
         builder: (BuildContext context, Widget? child) {
           return Theme(
@@ -151,7 +153,7 @@ class _LeaveFormState extends State<LeaveForm> {
               DateTime.now().minute,
             );
             if (_endDate.isBefore(_startDate)) {
-              _endDate = _startDate;
+              _endDate = _startDate.add(const Duration(days: 1));
             }
           } else {
             _endDate = DateTime(
@@ -180,15 +182,15 @@ class _LeaveFormState extends State<LeaveForm> {
             backgroundColor: Colors.red,
           ),
         );
-        return;
+        
+      } else {
+        context.read<LeaveCubit>().applyLeave(
+              type: _selectedLeaveType,
+              startDate: _startDate,
+              endDate: _endDate,
+              reason: _reasonController.text.trim(),
+            );
       }
-
-      context.read<LeaveCubit>().applyLeave(
-            type: _selectedLeaveType,
-            startDate: _startDate,
-            endDate: _endDate,
-            reason: _reasonController.text.trim(),
-          );
     }
   }
 }

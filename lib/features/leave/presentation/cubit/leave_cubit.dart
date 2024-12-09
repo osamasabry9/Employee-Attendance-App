@@ -25,9 +25,11 @@ class LeaveCubit extends Cubit<LeaveState> {
         super(const LeaveState.initial());
 
   Future<void> getLeaves() async {
+    if (isClosed) return;
     emit(const LeaveState.loading());
     final result = await _getLeaves(NoParams());
 
+    if (isClosed) return;
     result.fold(
       (error) => emit(LeaveState.error(message: error.toString())),
       (leaves) => emit(LeaveState.loaded(
@@ -41,9 +43,11 @@ class LeaveCubit extends Cubit<LeaveState> {
   }
 
   Future<void> getLeaveById(String id) async {
+    if (isClosed) return;
     emit(const LeaveState.loading());
     final result = await _getLeaveById(id);
 
+    if (isClosed) return;
     result.fold(
       (error) => emit(LeaveState.error(message: error.toString())),
       (leave) => emit(LeaveState.leaveDetails(leave: leave)),
@@ -57,24 +61,7 @@ class LeaveCubit extends Cubit<LeaveState> {
     required String reason,
   }) async {
     try {
-      // Validate input data
-
-      if (reason.isEmpty) {
-        emit(const LeaveState.error(message: 'Reason is required'));
-        return;
-      }
-      if (endDate.isBefore(startDate)) {
-        emit(const LeaveState.error(
-            message: 'End date cannot be before start date'));
-        return;
-      }
-      if (startDate.isBefore(DateTime.now())) {
-        emit(const LeaveState.error(
-            message: 'Start date cannot be in the past'));
-        return;
-      }
-
-      emit(const LeaveState.loading());
+      if (isClosed) return;
 
       final leave = Leave(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -87,17 +74,30 @@ class LeaveCubit extends Cubit<LeaveState> {
         appliedAt: DateTime.now(),
       );
 
-      final result = await _applyLeave(leave);
+      final result = await _applyLeave(
+        leave,
+      );
+
+      if (isClosed) return;
 
       result.fold(
-        (error) => emit(LeaveState.error(message: error.toString())),
+        (error) {
+          if (!isClosed) {
+            emit(LeaveState.error(message: error.toString()));
+          }
+        },
         (_) {
-          emit(const LeaveState.leaveApplied());
-          getLeaves();
+          if (!isClosed) {
+            emit(const LeaveState.leaveApplied());
+            getLeaves();
+          }
         },
       );
     } catch (e) {
-      emit(LeaveState.error(message: 'Failed to apply leave: ${e.toString()}'));
+      if (!isClosed) {
+        emit(LeaveState.error(
+            message: 'Failed to apply leave: ${e.toString()}'));
+      }
     }
   }
 
@@ -106,7 +106,10 @@ class LeaveCubit extends Cubit<LeaveState> {
     required LeaveStatus status,
   }) async {
     try {
+      if (isClosed) return;
+
       emit(const LeaveState.loading());
+
       final result = await _updateLeaveStatus(
         UpdateLeaveStatusParams(
           id: leaveId,
@@ -114,33 +117,54 @@ class LeaveCubit extends Cubit<LeaveState> {
         ),
       );
 
+      if (isClosed) return;
+
       result.fold(
-        (failure) => emit(LeaveState.error(message: failure.toString())),
+        (failure) {
+          if (!isClosed) {
+            emit(LeaveState.error(message: failure.toString()));
+          }
+        },
         (_) async {
+          if (isClosed) return;
+
           // First fetch new leaves
           final leavesResult = await _getLeaves(NoParams());
+
+          if (isClosed) return;
+
           leavesResult.fold(
-            (failure) => emit(LeaveState.error(message: failure.toString())),
+            (failure) {
+              if (!isClosed) {
+                emit(LeaveState.error(message: failure.toString()));
+              }
+            },
             (leaves) {
+              if (isClosed) return;
+
               final stats = _calculateLeaveStats(leaves);
               final upcomingLeaves = _filterUpcomingLeaves(leaves);
               final pastLeaves = _filterPastLeaves(leaves);
               final teamLeaves = _filterTeamLeaves(leaves);
 
-              emit(LeaveState.loaded(
-                leaves: leaves,
-                stats: stats,
-                upcomingLeaves: upcomingLeaves,
-                pastLeaves: pastLeaves,
-                teamLeaves: teamLeaves,
-              ));
+              if (!isClosed) {
+                emit(LeaveState.loaded(
+                  leaves: leaves,
+                  stats: stats,
+                  upcomingLeaves: upcomingLeaves,
+                  pastLeaves: pastLeaves,
+                  teamLeaves: teamLeaves,
+                ));
+              }
             },
           );
         },
       );
     } catch (e) {
-      emit(LeaveState.error(
-          message: 'Failed to update leave status: ${e.toString()}'));
+      if (!isClosed) {
+        emit(LeaveState.error(
+            message: 'Failed to update leave status: ${e.toString()}'));
+      }
     }
   }
 
