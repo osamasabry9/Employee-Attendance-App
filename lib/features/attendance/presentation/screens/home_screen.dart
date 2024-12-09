@@ -5,6 +5,7 @@ import 'package:iconsax/iconsax.dart';
 
 import '../../../../core/constants/app_colors.dart';
 
+import '../../../leave/presentation/screens/leave_list_screen.dart';
 
 import '../../domain/entities/attendance_record_status.dart';
 import '../cubit/attendance_cubit.dart';
@@ -50,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen>
           DashboardView(),
           ActivityHistoryScreen(),
           SizedBox(),
-          SizedBox(),
+          LeaveListScreen(),
           SettingsScreen(),
         ],
       ),
