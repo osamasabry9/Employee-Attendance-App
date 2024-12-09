@@ -7,7 +7,6 @@ import '../../../../core/constants/app_colors.dart';
 
 import '../../../leave/presentation/screens/leave_list_screen.dart';
 
-import '../../domain/entities/attendance_record_status.dart';
 import '../cubit/attendance_cubit.dart';
 import '../cubit/attendance_state.dart';
 import '../widgets/dashboard/dashboard_view.dart';
@@ -25,6 +24,13 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   TabController? _tabController;
+  final List<Widget> _pages = [
+    const DashboardView(),
+    const ActivityHistoryScreen(),
+    const SizedBox(),
+    const LeaveListScreen(),
+    const SettingsScreen(),
+  ];
 
   @override
   void initState() {
@@ -40,185 +46,155 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
+  void _handleAttendanceAction() async {
+    try {
+      final state = context.read<AttendanceCubit>().state;
+
+      state.maybeWhen(
+        loaded: (attendances, isCheckedIn, lastCheckIn, lastCheckOut) async {
+          final cubit = context.read<AttendanceCubit>();
+
+          // Find today's attendance record
+          final todayAttendance = attendances
+              .where((a) => DateUtils.isSameDay(a.date, DateTime.now()))
+              .firstOrNull;
+
+          if (isCheckedIn && todayAttendance != null) {
+            // Check out
+            await cubit.checkOut(
+              id: todayAttendance.id,
+              location: 'Office',
+            );
+          } else if (!isCheckedIn && todayAttendance == null) {
+            // Check in
+            await cubit.checkIn(
+              userId: 'current_user',
+              location: 'Office',
+            );
+          }
+        },
+        orElse: () {},
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16.w),
+        ),
+      );
+    }
+  }
+
+  void _handleStateChanges(BuildContext context, AttendanceState state) {
+    state.maybeWhen(
+      error: (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message ?? 'An error occurred'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16.w),
+          ),
+        );
+      },
+      orElse: () {},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: TabBarView(
-        controller: _tabController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: const [
-          DashboardView(),
-          ActivityHistoryScreen(),
-          SizedBox(),
-          LeaveListScreen(),
-          SettingsScreen(),
-        ],
-      ),
-      floatingActionButton: BlocBuilder<AttendanceCubit, AttendanceState>(
-        builder: (context, state) {
-          return state.maybeWhen(
+    return BlocConsumer<AttendanceCubit, AttendanceState>(
+      listener: _handleStateChanges,
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: _pages[_selectedIndex],
+          floatingActionButton: state.maybeWhen(
             loaded: (attendances, isCheckedIn, lastCheckIn, lastCheckOut) {
-              return FloatingActionButton(
-                onPressed: () async {
-                  try {
-                    final cubit = context.read<AttendanceCubit>();
+              final bool isWeekend =
+                  DateTime.now().weekday == DateTime.saturday ||
+                      DateTime.now().weekday == DateTime.sunday;
 
-                    if (isCheckedIn) {
-                      // For check-out, find today's active check-in
-                      final todayAttendance = attendances.lastWhere(
-                        (a) =>
-                            a.status == AttendanceRecordStatus.checkedIn &&
-                            a.checkOut == null &&
-                            DateUtils.isSameDay(a.date, DateTime.now()),
-                        orElse: () =>
-                            throw Exception('No active check-in found'),
-                      );
+              // Find today's attendance record
+              final todayAttendance = attendances
+                  .where((a) => DateUtils.isSameDay(a.date, DateTime.now()))
+                  .firstOrNull;
 
-                      await cubit.checkOut(
-                        id: todayAttendance.id,
-                        location: 'Office',
-                      );
-                    } else {
-                      // Check if there's already a completed attendance for today
-                      final hasTodayAttendance = attendances.any((a) =>
-                          DateUtils.isSameDay(a.date, DateTime.now()) &&
-                          a.checkOut != null);
+              final bool hasCompletedToday =
+                  todayAttendance != null && todayAttendance.checkOut != null;
 
-                      if (hasTodayAttendance) {
-                        throw Exception(
-                            'Already completed attendance for today');
-                      }
-
-                      await cubit.checkIn(
-                        userId: 'current_user',
-                        location: 'Office',
-                      );
-                    }
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(e.toString()),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
-                  }
-                },
-                elevation: 8,
-                backgroundColor: Colors.transparent,
-                child: Container(
-                  height: 64,
-                  width: 64,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        isCheckedIn ? AppColors.error : AppColors.primary,
-                        isCheckedIn
-                            ? AppColors.error.withOpacity(0.8)
-                            : AppColors.primary.withOpacity(0.8),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            (isCheckedIn ? AppColors.error : AppColors.success)
-                                .withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
+              if (isWeekend || hasCompletedToday) {
+                return FloatingActionButton(
+                  onPressed: null,
+                  backgroundColor: AppColors.success,
                   child: Icon(
-                    isCheckedIn ? Iconsax.logout : Iconsax.login,
-                    color: Colors.white,
-                    size: 32,
+                    Iconsax.tick_circle,
+                    color: AppColors.textPrimary,
+                    size: 24.sp,
                   ),
+                );
+              }
+
+              return FloatingActionButton(
+                onPressed: _handleAttendanceAction,
+                backgroundColor:
+                    isCheckedIn ? AppColors.error : AppColors.primary,
+                child: Icon(
+                  isCheckedIn ? Iconsax.login_1 : Iconsax.logout,
+                  color: Colors.white,
+                  size: 24.sp,
                 ),
               );
             },
-            orElse: () => const SizedBox.shrink(),
-          );
-        },
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: onTapChange,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.iconInactive,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Iconsax.home, size: 24.sp),
-            activeIcon: Icon(Iconsax.home_15, size: 24.sp),
-            label: 'Home',
+            orElse: () => FloatingActionButton(
+              onPressed: _handleAttendanceAction,
+              backgroundColor: AppColors.primary,
+              child: Icon(
+                Iconsax.login,
+                color: Colors.white,
+                size: 24.sp,
+              ),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Iconsax.calendar, size: 24.sp),
-            activeIcon: Icon(Iconsax.calendar5, size: 24.sp),
-            label: 'Calendar',
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: onTapChange,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.iconInactive,
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            items: [
+              BottomNavigationBarItem(
+                icon: Icon(Iconsax.home, size: 24.sp),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Iconsax.calendar, size: 24.sp),
+                label: 'Calendar',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(null, size: 5.sp),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Iconsax.profile_2user, size: 24.sp),
+                label: 'Leave',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Iconsax.setting, size: 24.sp),
+                label: 'Settings',
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(null, size: 5.sp),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Iconsax.profile_2user, size: 24.sp),
-            activeIcon: Icon(Iconsax.profile_2user5, size: 24.sp),
-            label: 'Leave',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Iconsax.setting, size: 24.sp),
-            activeIcon: Icon(Iconsax.setting5, size: 24.sp),
-            label: 'Settings',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
-
-
-/*
- CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          switch (index) {
-            case 1:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const ActivityHistoryScreen()),
-              );
-              break;
-            case 3:
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: getIt<LeaveCubit>(),
-                    child: const LeaveListScreen(),
-                  ),
-                ),
-              );
-              break;
-            case 4:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-              break;
-          }
-        },
-      ),
-*/

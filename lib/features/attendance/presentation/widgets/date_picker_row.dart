@@ -26,18 +26,22 @@ class DatePickerRow extends StatelessWidget {
 
   Color _getDateColor(DateTime date, bool isSelected) {
     if (isSelected) return Colors.white;
-    if (date.weekday == DateTime.friday) return AppColors.error;
+    if (date.weekday == DateTime.saturday || date.weekday == DateTime.sunday) {
+      return AppColors.error;
+    }
     return AppColors.textSecondary;
   }
 
   Color _getBackgroundColor(DateTime date, bool isSelected) {
     if (isSelected) {
-      return date.weekday == DateTime.friday
+      return date.weekday == DateTime.saturday ||
+              date.weekday == DateTime.sunday
           ? AppColors.error
           : AppColors.primary;
     }
     if (DateUtils.isSameDay(date, DateTime.now())) {
-      return date.weekday == DateTime.friday
+      return date.weekday == DateTime.saturday ||
+              date.weekday == DateTime.sunday
           ? AppColors.error.withOpacity(0.1)
           : AppColors.primary.withOpacity(0.1);
     }
