@@ -22,13 +22,7 @@ enum LeaveStatus {
   }
 }
 
-enum LeaveType {
-  casual,
-  sick,
-  annual,
-  unpaid,
-  other;
-}
+enum LeaveType { medical, vacation, personal, other }
 
 class Leave extends Equatable {
   final String id;
@@ -58,6 +52,26 @@ class Leave extends Equatable {
   int get duration {
     return endDate.difference(startDate).inDays + 1;
   }
+
+  // Calculate the number of working days between two dates
+  int calculateWorkingDays(DateTime startDate, DateTime endDate) {
+    int workingDays = 0;
+
+    // Loop through each day between the start date and the end date
+    for (DateTime date = startDate;
+        date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
+        date = date.add(const Duration(days: 1))) {
+      // Check if the day is a weekday (Monday to Friday)
+      if (date.weekday != DateTime.saturday &&
+          date.weekday != DateTime.sunday) {
+        workingDays++;
+      }
+    }
+
+    return workingDays;
+  }
+
+  int get workingDays => calculateWorkingDays(startDate, endDate);
 
   bool get isPending => status == LeaveStatus.pending;
   bool get isApproved => status == LeaveStatus.approved;
