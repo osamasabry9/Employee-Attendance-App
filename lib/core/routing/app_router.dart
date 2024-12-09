@@ -1,12 +1,11 @@
 import 'package:employee_attendance/features/attendance/presentation/screens/home_screen.dart';
+import 'package:employee_attendance/features/leave/presentation/screens/apply_leave_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/attendance/presentation/cubit/attendance_cubit.dart';
 import '../../features/attendance/presentation/screens/activity_history_screen.dart';
 import '../../features/leave/presentation/cubit/leave_cubit.dart';
-import '../../features/leave/presentation/screens/leave_detail_screen.dart';
-import '../../features/leave/presentation/screens/leave_form_screen.dart';
 import '../di/injection_container.dart';
 
 class AppRouter {
@@ -36,16 +35,7 @@ class AppRouter {
             path: 'leave/new',
             builder: (context, state) => BlocProvider.value(
               value: context.read<LeaveCubit>(),
-              child: const LeaveFormScreen(),
-            ),
-          ),
-          GoRoute(
-            path: 'leave/:id',
-            builder: (context, state) => BlocProvider(
-              create: (context) => getIt<LeaveCubit>(),
-              child: LeaveDetailScreen(
-                leaveId: state.pathParameters['id']!,
-              ),
+              child: const ApplyLeaveScreen(),
             ),
           ),
           GoRoute(
