@@ -107,7 +107,6 @@ class LeaveCubit extends Cubit<LeaveState> {
   }) async {
     try {
       emit(const LeaveState.loading());
-
       final result = await _updateLeaveStatus(
         UpdateLeaveStatusParams(
           id: leaveId,
@@ -116,10 +115,27 @@ class LeaveCubit extends Cubit<LeaveState> {
       );
 
       result.fold(
-        (error) => emit(LeaveState.error(message: error.toString())),
-        (_) {
-          emit(const LeaveState.leaveUpdated());
-          getLeaves();
+        (failure) => emit(LeaveState.error(message: failure.toString())),
+        (_) async {
+          // First fetch new leaves
+          final leavesResult = await _getLeaves(NoParams());
+          leavesResult.fold(
+            (failure) => emit(LeaveState.error(message: failure.toString())),
+            (leaves) {
+              final stats = _calculateLeaveStats(leaves);
+              final upcomingLeaves = _filterUpcomingLeaves(leaves);
+              final pastLeaves = _filterPastLeaves(leaves);
+              final teamLeaves = _filterTeamLeaves(leaves);
+
+              emit(LeaveState.loaded(
+                leaves: leaves,
+                stats: stats,
+                upcomingLeaves: upcomingLeaves,
+                pastLeaves: pastLeaves,
+                teamLeaves: teamLeaves,
+              ));
+            },
+          );
         },
       );
     } catch (e) {

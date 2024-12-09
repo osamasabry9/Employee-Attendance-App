@@ -173,7 +173,31 @@ class LeaveCard extends StatelessWidget {
 
   void _handleStatusUpdate(BuildContext context, LeaveStatus status) {
     try {
-      onUpdateStatus?.call(leave.id, status);
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            'Confirm Action',
+            style: AppFonts.bodyLarge,
+          ),
+          content: Text(
+              'Are you sure you want to ${status == LeaveStatus.approved ? 'approve' : 'reject'} this leave request?',
+              style: AppFonts.bodyMedium),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: AppFonts.bodyMedium),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                onUpdateStatus?.call(leave.id, status);
+              },
+              child: Text('Confirm', style: AppFonts.bodyMedium),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
