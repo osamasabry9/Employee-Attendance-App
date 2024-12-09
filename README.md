@@ -1,4 +1,5 @@
-# Leave Management App  
+# Employee-Attendance-App
+
 
 ## **Overview**  
 The Leave Management App is designed to streamline the process of managing and tracking leave requests for employees. It ensures a smooth user experience by following Clean Architecture principles, maintaining reusability, and providing a responsive UI aligned with modern design standards.  
