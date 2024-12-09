@@ -40,10 +40,12 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   onTapChange(int index) {
-    setState(() {
-      _selectedIndex = index;
-      _tabController!.index = _selectedIndex;
-    });
+    if (index != _selectedIndex && index != 2) {
+      setState(() {
+        _selectedIndex = index;
+        _tabController!.index = _selectedIndex;
+      });
+    }
   }
 
   void _handleAttendanceAction() async {
@@ -180,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen>
                 label: 'Calendar',
               ),
               BottomNavigationBarItem(
-                icon: Icon(null, size: 5.sp),
+                icon: Icon(null, size: 0.sp),
                 label: '',
               ),
               BottomNavigationBarItem(

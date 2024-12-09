@@ -50,7 +50,7 @@ class Leave extends Equatable {
   });
 
   int get duration {
-    return endDate.difference(startDate).inDays + 1;
+    return endDate.difference(startDate).inDays;
   }
 
   // Calculate the number of working days between two dates
@@ -71,7 +71,8 @@ class Leave extends Equatable {
     return workingDays;
   }
 
-  int get workingDays => calculateWorkingDays(startDate, endDate);
+  int get workingDays => calculateWorkingDays(
+      startDate, endDate.subtract(const Duration(days: 1)));
 
   bool get isPending => status == LeaveStatus.pending;
   bool get isApproved => status == LeaveStatus.approved;
